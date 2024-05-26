@@ -22,77 +22,62 @@ senha_da_conta = set()
 
 
 
-def depositar():
-    global dados_conta
-    global saldo
-    global lista_debitos
+def depositar(conta_logada):
     global i
 
     deposito = float(input("Quanto deseja depositar? "))
     if deposito > 0:
         
-        saldo = saldo + deposito
-        print(f"Seu saldo atual é de {saldo}")
+        conta_logada['saldo'] += deposito
+        print(f"Seu saldo atual é de {conta_logada['saldo']}")
 
         i = i + 1
-        lista_debitos.append(f"{i}º depósito no valor de: R$ {deposito: .2f}")
-        dados_conta['numero_conta'].append(lista_debitos)
+        conta_logada['lista_debitos'].append(f"{i}º depósito no valor de: R$ {deposito: .2f}")
 
     else:
         print("Não é possível depositar valores inferiores a 'R$ 00,00'. Favor informe um valor maior que 'R$ 00,00'")
 
 
-def sacar():
-        
-    global quantidade_saque
-    global valor_saque_dia
-    global saldo
-    global lista_saques
+def sacar(conta_logada):
     global j
 
     saque = float(input("Informe quanto deseja sacar: "))
-    if quantidade_saque < 3:
-        if saque <= saldo:
+    if conta_logada['quantidade_saque'] < 3:
+        if saque <= conta_logada['saldo']:
             if saque <= 500:
                 print("Saque realizado com sucesso!")
-                saldo = saldo - saque
-                quantidade_saque += 1
-                valor_saque_dia += saque
-                print(f"Total dos saques de hoje {valor_saque_dia}.\n Quantidade de saques realizados hoje: {quantidade_saque}.\n Saldo restante: {saldo}\n")
+                conta_logada['saldo'] -= saque
+                conta_logada['quantidade_saque'] += 1
+                conta_logada['valor_saque_dia'] += saque
+
+                print(f"Total dos saques de hoje {conta_logada['valor_saque_dia']}.\n Quantidade de saques realizados hoje: {quantidade_saque}.\n Saldo restante: {conta_logada['saldo']}\n")
                 j = j + 1
-                lista_saques.append(f"{j}º saque no valor de: R$ {saque: .2f}")
+                conta_logada['lista_saques'].append(f"{j}º saque no valor de: R$ {saque: .2f}")
 
             else:
                 print("O saque não poderá ultrapassar R$ 500,00")
                 
         else:
-            print(f"O valor do saque não pode ser superior ao valor do saldo! O seu saldo atualmente é {saldo}")
+            print(f"O valor do saque não pode ser superior ao valor do saldo! O seu saldo atualmente é {conta_logada['saldo']}")
     else:
         print("Limite diário de quantidade de saques (3) ultrapassado!")
         
 
-def ver_extrato():
-    global saldo
+def ver_extrato(conta_logada):
 
-    if i == 0 and j == 0:
+    if not conta_logada['lista_debitos'] and not conta_logada['lista_saques']:
         print("Não foram realizadas movimentações na sua conta.\n")
-        print(f"O saldo atual da conta é R${saldo: .2f}")
 
-    elif i == 0 and j > 0:
-        print("Não foram realizados débitos na sua conta.\n")
-        print(lista_saques)
-        print(f"O saldo atual da conta é R${saldo: .2f}")
+    if conta_logada['lista_debitos']:
+        print("Débitos:")
+        print(conta_logada['lista_debitos'])
+        print(f"O saldo atual da conta é R${conta_logada['saldo']: .2f}")
 
-    elif i > 0 and j == 0:
-        print(lista_debitos)
-        print("Não foram realizados saques na sua conta.\n")
-        print(f"O saldo atual da conta é R${saldo: .2f}")
-
-    else:
-        print(lista_debitos)
-        print(lista_saques)
-        print(f"O saldo atual da conta é R${saldo: .2f}")
-
+    if conta_logada['lista_saques']:
+        print("Saques")
+        print(conta_logada['lista_saques'])
+    
+    print(f"O saldo atual da conta é R${conta_logada['saldo']: .2f}")
 
 
 def cadastrar_cliente():
@@ -174,7 +159,12 @@ def criar_conta():
             'numero_agencia': numero_agencia,
             'numero_conta': numero_conta_atual,
             'usuario': validar_cpf_cadastro,
-            'senha': senha_da_conta
+            'senha': senha_da_conta,
+            'saldo': 0,
+            'quantidade_saque': 0,
+            'valor_saque_dia': 0,
+            'lista_saques': [],
+            'lista_debitos': []
         }
 
         dados_conta[validar_cpf_cadastro].append(nova_conta)
@@ -192,7 +182,6 @@ def criar_conta():
 
 
 def logar():
-    global dados_conta
 
     login = int(input("Informe o numero da sua conta: "))
     senha = input("Informe a sua senha: ")
@@ -201,10 +190,10 @@ def logar():
         for conta in contas:
             if conta['numero_conta'] == login and conta['senha'] == senha:
                 print("Login realizado com sucesso!")
-                return True
+                return conta
 
     print("Número da conta ou senha estão incorretos!")
-    return False
+    return None
 
 
 
@@ -214,7 +203,7 @@ def logar():
 
 while tela_login != 5:
 
-    tela_login = int(input("""Escolha uma opção:
+    tela_login = float(input("""Escolha uma opção:
           1 - Para Logar na sua conta
           2 - Para Cadastrar-se no banco
           3 - Para Criar uma conta
@@ -222,7 +211,8 @@ while tela_login != 5:
     
     if tela_login == 1:
 
-        if logar():
+        conta_logada = logar()
+        if conta_logada:
             opcao = -1
 
 
@@ -237,14 +227,14 @@ while tela_login != 5:
             
                 if opcao == 1:
 
-                    depositar()        
+                    depositar(conta_logada)        
 
                 elif opcao == 2:                    
                         
-                    sacar()
+                    sacar(conta_logada)
 
                 elif opcao == 3:
-                    ver_extrato()
+                    ver_extrato(conta_logada)
 
                 elif opcao == 5:
                     print("Saindo da conta...")
